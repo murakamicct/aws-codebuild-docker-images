@@ -31,24 +31,24 @@ RUN set -ex \
     && ssh-keyscan -t rsa,dsa -H bitbucket.org >> ~/.ssh/known_hosts \
     && chmod 600 ~/.ssh/known_hosts \
     && apt-get install -y -qq --no-install-recommends \
-          apt-utils asciidoc autoconf automake build-essential bzip2 \
-          bzr curl dirmngr docbook-xml docbook-xsl dpkg-dev \
-          e2fsprogs expect fakeroot file g++ gcc gettext gettext-base \
-          groff gzip iptables jq less libapr1 libaprutil1 \
-          libargon2-0-dev libbz2-dev libc6-dev libcurl4-openssl-dev \
-          libdb-dev libdbd-sqlite3-perl libdbi-perl libdpkg-perl \
-          libedit-dev liberror-perl libevent-dev libffi-dev libgeoip-dev \
-          libglib2.0-dev libhttp-date-perl libio-pty-perl libjpeg-dev \
-          libkrb5-dev liblzma-dev libmagickcore-dev libmagickwand-dev \
-          libmysqlclient-dev libncurses5-dev libncursesw5-dev libonig-dev \
-          libpq-dev libreadline-dev libserf-1-1 libsodium-dev libsqlite3-dev libssl-dev \
-          libsvn1 libsvn-perl libtcl8.6 libtidy-dev libtimedate-perl \
-          libtool libwebp-dev libxml2-dev libxml2-utils libxslt1-dev \
-          libyaml-dev libyaml-perl llvm locales make mlocate \
-          netbase openssl patch pkg-config procps python3-configobj \
-          python-openssl rsync sgml-base sgml-data \
-          tar tcl tcl8.6 tk tk-dev unzip wget xfsprogs xml-core xmlto xsltproc \
-          libzip5 libzip-dev vim xvfb xz-utils zip zlib1g-dev \
+    apt-utils asciidoc autoconf automake build-essential bzip2 \
+    bzr curl dirmngr docbook-xml docbook-xsl dpkg-dev \
+    e2fsprogs expect fakeroot file g++ gcc gettext gettext-base \
+    groff gzip iptables jq less libapr1 libaprutil1 \
+    libargon2-0-dev libbz2-dev libc6-dev libcurl4-openssl-dev \
+    libdb-dev libdbd-sqlite3-perl libdbi-perl libdpkg-perl \
+    libedit-dev liberror-perl libevent-dev libffi-dev libgeoip-dev \
+    libglib2.0-dev libhttp-date-perl libio-pty-perl libjpeg-dev \
+    libkrb5-dev liblzma-dev libmagickcore-dev libmagickwand-dev \
+    libmysqlclient-dev libncurses5-dev libncursesw5-dev libonig-dev \
+    libpq-dev libreadline-dev libserf-1-1 libsodium-dev libsqlite3-dev libssl-dev \
+    libsvn1 libsvn-perl libtcl8.6 libtidy-dev libtimedate-perl \
+    libtool libwebp-dev libxml2-dev libxml2-utils libxslt1-dev \
+    libyaml-dev libyaml-perl llvm locales make mlocate \
+    netbase openssl patch pkg-config procps python3-configobj \
+    python-openssl rsync sgml-base sgml-data \
+    tar tcl tcl8.6 tk tk-dev unzip wget xfsprogs xml-core xmlto xsltproc \
+    libzip5 libzip-dev vim xvfb xz-utils zip zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ENV LC_CTYPE="C.UTF-8"
@@ -93,18 +93,18 @@ RUN set -ex \
 
 # Install stunnel
 RUN set -ex \
-   && STUNNEL_VERSION=5.64 \
-   && STUNNEL_TAR=stunnel-$STUNNEL_VERSION.tar.gz \
-   && STUNNEL_SHA256="eebe53ed116ba43b2e786762b0c2b91511e7b74857ad4765824e7199e6faf883" \
-   && curl -o $STUNNEL_TAR https://www.usenix.org.uk/mirrors/stunnel/archive/5.x/$STUNNEL_TAR && echo "$STUNNEL_SHA256 $STUNNEL_TAR" | sha256sum --check && tar xfz $STUNNEL_TAR \
-   && cd stunnel-$STUNNEL_VERSION \
-   && ./configure \
-   && make -j4 \
-   && make install \
-   && openssl genrsa -out key.pem 2048 \
-   && openssl req -new -x509 -key key.pem -out cert.pem -days 1095 -subj "/C=US/ST=Washington/L=Seattle/O=Amazon/OU=Codebuild/CN=codebuild.amazon.com" \
-   && cat key.pem cert.pem >> /usr/local/etc/stunnel/stunnel.pem \
-   && cd .. && rm -rf stunnel-${STUNNEL_VERSION}*
+    && STUNNEL_VERSION=5.64 \
+    && STUNNEL_TAR=stunnel-$STUNNEL_VERSION.tar.gz \
+    && STUNNEL_SHA256="eebe53ed116ba43b2e786762b0c2b91511e7b74857ad4765824e7199e6faf883" \
+    && curl -o $STUNNEL_TAR https://www.usenix.org.uk/mirrors/stunnel/archive/5.x/$STUNNEL_TAR && echo "$STUNNEL_SHA256 $STUNNEL_TAR" | sha256sum --check && tar xfz $STUNNEL_TAR \
+    && cd stunnel-$STUNNEL_VERSION \
+    && ./configure \
+    && make -j4 \
+    && make install \
+    && openssl genrsa -out key.pem 2048 \
+    && openssl req -new -x509 -key key.pem -out cert.pem -days 1095 -subj "/C=US/ST=Washington/L=Seattle/O=Amazon/OU=Codebuild/CN=codebuild.amazon.com" \
+    && cat key.pem cert.pem >> /usr/local/etc/stunnel/stunnel.pem \
+    && cd .. && rm -rf stunnel-${STUNNEL_VERSION}*
 
 # AWS Tools
 # https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
@@ -136,7 +136,7 @@ RUN curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscli
 ARG SRC_DIR="/usr/src"
 ARG N_SRC_DIR="$SRC_DIR/n"
 RUN git clone https://github.com/tj/n $N_SRC_DIR \
-     && cd $N_SRC_DIR && make install 
+    && cd $N_SRC_DIR && make install 
 
 #=======================End of layer: tools  =================
 FROM tools AS runtimes
@@ -146,11 +146,11 @@ FROM tools AS runtimes
 ENV NODE_16_VERSION="16.15.1"
 
 RUN  n $NODE_16_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
-     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-     && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-     && apt-get update && apt-get install -y -qq --no-install-recommends yarn \
-     && yarn --version \
-     && cd / && rm -rf $N_SRC_DIR && rm -rf /tmp/*
+    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
+    && apt-get update && apt-get install -y -qq --no-install-recommends yarn \
+    && yarn --version \
+    && cd / && rm -rf $N_SRC_DIR && rm -rf /tmp/*
 
 #****************      END NODEJS     ****************************************************
 
@@ -273,6 +273,29 @@ RUN mkdir -m755 -p /etc/apt/keyrings && \
 RUN echo  "export PATH=/tmp/LAStools/bin:$PATH" >> ~/.bashrc
 RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/LAStools/LASlib/lib:/usr/local/lib" >> ~/.bashrc
 #*********************** END  LASTools  ****************************
+
+#************************* libLAS **********************************
+WORKDIR /tmp
+
+RUN apt update && \
+    apt install -y \
+    libboost-program-options-dev \
+    libboost-iostreams-dev \
+    libboost-filesystem-dev \
+    libboost-thread-dev
+
+RUN wget http://download.osgeo.org/liblas/libLAS-1.8.1.tar.bz2 && \
+    tar xvf libLAS-1.8.1.tar.bz2 && \
+    cd libLAS-1.8.1 && \
+    mkdir build && \
+    cd build && \
+    cmake -G "Unix Makefiles" ../ && \
+    make && \
+    make install
+
+COPY PointCloudThinner /usr/local/bin    
+RUN chmod +x /usr/local/bin/PointCloudThinner
+#*********************** END  libLAS  ****************************
 
 #=======================End of layer: lastools  =================
 
