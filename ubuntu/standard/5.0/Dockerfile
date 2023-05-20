@@ -157,9 +157,9 @@ RUN  n $NODE_16_VERSION && npm install --save-dev -g -f grunt && npm install --s
 #=======================End of layer: runtimes  =================
 
 
-FROM runtimes AS lastools
+FROM runtimes AS required_libs
 
-#****************        LASTools    *********************************************
+#**************** Required Libraries START *********************************************
 WORKDIR /tmp
 
 RUN apt update && \
@@ -173,108 +173,26 @@ RUN apt update && \
     vim \
     git
 
-#RUN mkdir lastools && \
-#    cd lastools && \
-#    wget https://downloads.rapidlasso.de/lastools.tar.gz && \
-#    tar -xvf lastools.tar.gz
-
-ENV TIFF_VERSION 4.0.9
-RUN wget http://download.osgeo.org/libtiff/tiff-${TIFF_VERSION}.tar.gz && \
-    tar -xvf tiff-${TIFF_VERSION}.tar.gz && \
-    cd tiff-${TIFF_VERSION} && \
-    cmake . && \
-    make -j $(nproc) && \
-    make install -j $(nproc)
-
 RUN apt update && \
     apt install -y \
-    zlib1g \
-    zlib1g-dev
+    cmake \
+    g++-10 \
+    libboost-all-dev \
+    libcurl4-openssl-dev \
+    libsqlite3-dev \
+    libtiff-dev \
+    sqlite3
 
-ENV LIBPNG_VERSION 1.4.22
-RUN git clone --branch v${LIBPNG_VERSION} --single-branch https://github.com/glennrp/libpng && \
-    cd libpng && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
+ENV PROJ_VERSION 9.2.0
+RUN git clone --branch ${PROJ_VERSION} https://github.com/OSGeo/PROJ.git
+RUN mkdir /tmp/PROJ/build
 
-RUN apt-get update && \
-    apt-get install -y libjpeg62-dev \
-    proj-bin \
-    mlocate \
-    autotools-dev \
-    automake \
-    libtool \
-    zip \
-    proj-bin \
-    libproj-dev \
-    ccache
+WORKDIR /tmp/PROJ/build
+RUN cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 .. && \
+    make -j`nproc` && \
+    make install && \
+    projsync --all --system-directory
 
-ENV GEOTIFF_VERSION 1.4.3
-RUN git clone --branch ${GEOTIFF_VERSION} --single-branch https://github.com/OSGeo/libgeotiff && \
-    cd libgeotiff && \
-    cd libgeotiff && \
-    mkdir build && \
-    cd build && \
-    export CFLAGS="-I/usr/include -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1" && \
-    cmake -DBUILD_SHARED_LIBS=ON .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc) && \
-    cd .. && \    
-    ./autogen.sh && \
-    ./configure && \
-    make dist && \
-    tar xvzf libgeotiff-${GEOTIFF_VERSION}.tar.gz && \
-    cd libgeotiff-${GEOTIFF_VERSION} && \
-    mkdir build_autoconf && \
-    cd build_autoconf && \
-    CFLAGS="-Wall -Wextra -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1 -D BUILD_SHARED_LIBS=ON"  ../configure && \
-    make -j3 && \
-    make check && \
-    cd .. && \
-    mkdir build_cmake && \
-    cd build_cmake && \
-    cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_C_FLAGS="-Wall -Wextra -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1" -DBUILD_SHARED_LIBS=ON .. && \
-    make -j3 && \
-    make install
-
-RUN apt-get update && \
-    apt-get install -y \
-    gawk \
-    bison
-
-ENV LAS_VERSION 2.0.1
-RUN git clone --branch v${LAS_VERSION} --single-branch https://github.com/LAStools/LAStools && \
-    cd LAStools && \
-    cd bin && \
-    wget https://downloads.rapidlasso.de/lastools.tar.gz && \
-    tar -xvf lastools.tar.gz && \
-    cd .. && \
-    cmake -D BUILD_SHARED_LIBS=ON . && \
-    make -j $(nproc) && \
-    make install -j $(nproc)
-
-RUN wget https://sourceforge.net/projects/libjpeg/files/libjpeg/6b/jpegsrc.v6b.tar.gz && \
-    tar -xvf jpegsrc.v6b.tar.gz
-
-RUN apt update && \
-    apt install -y \
-    gnupg \
-    software-properties-common
-
-RUN mkdir -m755 -p /etc/apt/keyrings && \
-    wget -O /etc/apt/keyrings/qgis-archive-keyring.gpg https://download.qgis.org/downloads/qgis-archive-keyring.gpg && \
-    apt update && \
-    apt install -y qgis \
-    qgis-plugin-grass
-
-RUN echo  "export PATH=/tmp/LAStools/bin:$PATH" >> ~/.bashrc
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/LAStools/LASlib/lib:/usr/local/lib" >> ~/.bashrc
-#*********************** END  LASTools  ****************************
-
-#************************* libLAS **********************************
 WORKDIR /tmp
 
 RUN apt update && \
@@ -284,22 +202,59 @@ RUN apt update && \
     libboost-filesystem-dev \
     libboost-thread-dev
 
-RUN wget http://download.osgeo.org/liblas/libLAS-1.8.1.tar.bz2 && \
-    tar xvf libLAS-1.8.1.tar.bz2 && \
-    cd libLAS-1.8.1 && \
+RUN apt update && apt install -y libgeotiff-dev
+
+ENV LIBLAS_VERSION 1.8.1
+RUN wget http://download.osgeo.org/liblas/libLAS-${LIBLAS_VERSION}.tar.bz2 && \
+    tar xvf libLAS-${LIBLAS_VERSION}.tar.bz2 && \
+    cd libLAS-${LIBLAS_VERSION} && \
     mkdir build && \
     cd build && \
-    cmake -G "Unix Makefiles" ../ && \
-    make && \
+    cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 -G "Unix Makefiles" ../ && \
+    make -j`nproc` && \
     make install
 
 COPY PointCloudThinner /usr/local/bin    
 RUN chmod +x /usr/local/bin/PointCloudThinner
-#*********************** END  libLAS  ****************************
+
+RUN apt update && \
+    apt install -y \
+    zlib1g \
+    zlib1g-dev
+
+RUN apt-get update && \
+    apt-get install -y \
+    libjpeg62-dev \
+    mlocate \
+    autotools-dev \
+    automake \
+    libtool \
+    zip \
+    ccache
+
+RUN apt-get update && \
+    apt-get install -y \
+    gawk \
+    bison
+
+RUN apt update && \
+    apt install -y \
+    gnupg \
+    software-properties-common
+
+RUN apt update && apt install -y qgis \
+    qgis-plugin-grass
+
+RUN apt remove -y libproj-dev
+RUN apt remove -y libgeotiff-dev
+
+RUN apt update && apt install -y libgeotiff5
+
+#**************** Required Libraries END *********************************************
 
 #=======================End of layer: lastools  =================
 
-FROM lastools AS runtimes_n_corretto
+FROM required_libs AS runtimes_n_corretto
 
 #****************        DOCKER    *********************************************
 ARG DOCKER_BUCKET="download.docker.com"

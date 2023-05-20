@@ -1,21 +1,21 @@
 # Build
 
-docker build . -t alexeypolitovcct/aws-codebuild-node16-lastools201
+docker build . -t murakamicct/aws-codebuild-node16-pointcloud
 
 ## M1
 
-docker build --platform linux/amd64 . -t alexeypolitovcct/aws-codebuild-node16-lastools201
+docker build --platform linux/amd64 . -t murakamicct/aws-codebuild-node16-pointcloud
 
 
 # Debug Run
 
-docker run -d -t alexeypolitovcct/aws-codebuild-node16-lastools201
+docker run -d -t murakamicct/aws-codebuild-node16-pointcloud
 
 ## M1
 
-docker run --platform linux/amd64 -d -t alexeypolitovcct/aws-codebuild-node16-lastools201
+docker run --platform linux/amd64 -d -t murakamicct/aws-codebuild-node16-pointcloud
 
 
 # Docker Hub
 
-docker push alexeypolitovcct/aws-codebuild-node16-lastools201
+docker push murakamicct/aws-codebuild-node16-pointcloud
