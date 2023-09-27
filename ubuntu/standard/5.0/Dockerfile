@@ -143,9 +143,9 @@ FROM tools AS runtimes
 
 #****************      NODEJS     ****************************************************
 
-ENV NODE_16_VERSION="16.15.1"
+ENV NODE_VERSION="20.7.0"
 
-RUN  n $NODE_16_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
+RUN  n $NODE_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
     && apt-get update && apt-get install -y -qq --no-install-recommends yarn \
@@ -291,7 +291,7 @@ VOLUME /var/lib/docker
 FROM runtimes_n_corretto AS std_v5
 
 # Activate runtime versions specific to image version.
-RUN n $NODE_16_VERSION
+RUN n $NODE_VERSION
 
 # Configure SSH
 COPY ssh_config /root/.ssh/config
