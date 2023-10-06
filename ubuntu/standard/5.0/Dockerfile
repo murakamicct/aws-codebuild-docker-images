@@ -145,7 +145,7 @@ FROM tools AS runtimes
 
 #****************      NODEJS     ****************************************************
 
-ENV NODE_VERSION="20.7.0"
+ENV NODE_VERSION="18.18.0"
 
 RUN  n $NODE_VERSION && npm install --save-dev -g -f grunt && npm install --save-dev -g -f grunt-cli && npm install --save-dev -g -f webpack \
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
