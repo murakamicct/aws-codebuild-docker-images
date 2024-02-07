@@ -27,8 +27,8 @@ RUN set -ex \
     && mkdir ~/.ssh \
     && mkdir -p /codebuild/image/config \
     && touch ~/.ssh/known_hosts \
-    && ssh-keyscan -t rsa,dsa -H github.com >> ~/.ssh/known_hosts \
-    && ssh-keyscan -t rsa,dsa -H bitbucket.org >> ~/.ssh/known_hosts \
+    && ssh-keyscan -t rsa,dsa,ed25519,ecdsa -H github.com >> ~/.ssh/known_hosts \
+    && ssh-keyscan -t rsa,dsa,ed25519,ecdsa -H bitbucket.org >> ~/.ssh/known_hosts \
     && chmod 600 ~/.ssh/known_hosts \
     && apt-get install -y -qq --no-install-recommends \
     apt-utils asciidoc autoconf automake build-essential bzip2 \
@@ -72,11 +72,13 @@ RUN set -ex \
     && geckodriver --version
 
 # Install Chrome
+ENV CHROME_VERSION="114.0.5735.198-1"
+
 RUN set -ex \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y -qq google-chrome-stable \
+    && wget --no-verbose -O /tmp/chrome.deb https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb \
+    && (dpkg -i /tmp/chrome.deb || apt-get -fy install) \
+    && rm /tmp/chrome.deb \
+    && sed -i 's|HERE/chrome"|HERE/chrome" --disable-setuid-sandbox --no-sandbox|g' "/opt/google/chrome/google-chrome" \
     && google-chrome --version
 
 # Install ChromeDriver
@@ -93,10 +95,10 @@ RUN set -ex \
 
 # Install stunnel
 RUN set -ex \
-    && STUNNEL_VERSION=5.64 \
+    && STUNNEL_VERSION=5.69 \
     && STUNNEL_TAR=stunnel-$STUNNEL_VERSION.tar.gz \
-    && STUNNEL_SHA256="eebe53ed116ba43b2e786762b0c2b91511e7b74857ad4765824e7199e6faf883" \
-    && curl -o $STUNNEL_TAR https://www.usenix.org.uk/mirrors/stunnel/archive/5.x/$STUNNEL_TAR && echo "$STUNNEL_SHA256 $STUNNEL_TAR" | sha256sum --check && tar xfz $STUNNEL_TAR \
+    && STUNNEL_SHA256="1ff7d9f30884c75b98c8a0a4e1534fa79adcada2322635e6787337b4e38fdb81" \
+    && curl -o $STUNNEL_TAR https://www.stunnel.org/archive/5.x/$STUNNEL_TAR && echo "$STUNNEL_SHA256 $STUNNEL_TAR" | sha256sum --check && tar xfz $STUNNEL_TAR \
     && cd stunnel-$STUNNEL_VERSION \
     && ./configure \
     && make -j4 \
@@ -183,15 +185,19 @@ RUN apt update && \
     libtiff-dev \
     sqlite3
 
-ENV PROJ_VERSION 9.2.0
+FROM required_libs AS proj_libs
+
+ENV PROJ_VERSION 9.1.0
 RUN git clone --branch ${PROJ_VERSION} https://github.com/OSGeo/PROJ.git
 RUN mkdir /tmp/PROJ/build
 
 WORKDIR /tmp/PROJ/build
-RUN cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 .. && \
-    make -j`nproc` && \
-    make install && \
-    projsync --all --system-directory
+RUN cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 ..
+RUN make
+RUN make install
+RUN projsync --all --system-directory
+
+FROM proj_libs AS liblas_libs
 
 WORKDIR /tmp
 
@@ -213,6 +219,8 @@ RUN wget http://download.osgeo.org/liblas/libLAS-${LIBLAS_VERSION}.tar.bz2 && \
     cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 -G "Unix Makefiles" ../ && \
     make -j`nproc` && \
     make install
+
+FROM proj_libs AS other_libs
 
 COPY PointCloudThinner /usr/local/bin    
 RUN chmod +x /usr/local/bin/PointCloudThinner
@@ -254,17 +262,17 @@ RUN apt update && apt install -y libgeotiff5
 
 #=======================End of layer: lastools  =================
 
-FROM required_libs AS runtimes_n_corretto
+FROM other_libs AS runtimes_n_corretto
 
 #****************        DOCKER    *********************************************
 ARG DOCKER_BUCKET="download.docker.com"
 ARG DOCKER_CHANNEL="stable"
 ARG DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034"
-ARG DOCKER_COMPOSE_VERSION="1.27.4"
+ARG DOCKER_COMPOSE_VERSION="1.29.2"
 ARG SRC_DIR="/usr/src"
 
-ARG DOCKER_SHA256="9ccfc39305ae1d8882d18c9c431544fca82913d6df717409ac2244ac58c4f070"
-ARG DOCKER_VERSION="20.10.15"
+ARG DOCKER_SHA256="AB91092320A87691A1EAF0225B48585DB9C69CFF0ED4B0F569F744FF765515E3"
+ARG DOCKER_VERSION="20.10.24"
 
 # Install Docker
 RUN set -ex \
@@ -297,8 +305,8 @@ RUN n $NODE_16_VERSION
 COPY ssh_config /root/.ssh/config
 COPY runtimes.yml /codebuild/image/config/runtimes.yml
 COPY dockerd-entrypoint.sh /usr/local/bin/dockerd-entrypoint.sh
-COPY legal/bill_of_material.txt     /usr/share/doc/bill_of_material.txt
-COPY amazon-ssm-agent.json          /etc/amazon/ssm/amazon-ssm-agent.json
+COPY legal/bill_of_material.txt /usr/share/doc/bill_of_material.txt
+COPY amazon-ssm-agent.json /etc/amazon/ssm/amazon-ssm-agent.json
 
 ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh"]
 
